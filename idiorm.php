@@ -36,6 +36,80 @@
      * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
      * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
      *
+     *
+     * The methods documented below are magic methods that conform to PSR-1.
+     * This documentation exposes these methods to doc generators and IDEs.
+     * @see http://www.php-fig.org/psr/psr-1/
+     *
+     * @method static array|string getConfig($key = null, $connection_name = self::DEFAULT_CONNECTION)
+     * @method static null resetConfig()
+     * @method static \ORM forTable($table_name, $connection_name = self::DEFAULT_CONNECTION)
+     * @method static null setDb($db, $connection_name = self::DEFAULT_CONNECTION)
+     * @method static null resetDb()
+     * @method static null setupLimitClauseStyle($connection_name)
+     * @method static \PDO getDb($connection_name = self::DEFAULT_CONNECTION)
+     * @method static bool rawExecute($query, $parameters = array())
+     * @method static \PDOStatement getLastStatement()
+     * @method static string getLastQuery($connection_name = null)
+     * @method static array getQueryLog($connection_name = self::DEFAULT_CONNECTION)
+     * @method array getConnectionNames()
+     * @method $this useIdColumn($id_column)
+     * @method \ORM|bool findOne($id=null)
+     * @method array|\IdiormResultSet findMany()
+     * @method \IdiormResultSet findResultSet()
+     * @method array findArray()
+     * @method $this forceAllDirty()
+     * @method $this rawQuery($query, $parameters = array())
+     * @method $this tableAlias($alias)
+     * @method int countNullIdColumns()
+     * @method $this selectExpr($expr, $alias=null)
+     * @method \ORM selectMany()
+     * @method \ORM selectManyExpr()
+     * @method $this rawJoin($table, $constraint, $table_alias, $parameters = array())
+     * @method $this innerJoin($table, $constraint, $table_alias=null)
+     * @method $this leftOuterJoin($table, $constraint, $table_alias=null)
+     * @method $this rightOuterJoin($table, $constraint, $table_alias=null)
+     * @method $this fullOuterJoin($table, $constraint, $table_alias=null)
+     * @method $this whereEqual($column_name, $value=null)
+     * @method $this whereNotEqual($column_name, $value=null)
+     * @method $this whereIdIs($id)
+     * @method $this whereAnyIs($values, $operator='=')
+     * @method array|string whereIdIn($ids)
+     * @method $this whereLike($column_name, $value=null)
+     * @method $this whereNotLike($column_name, $value=null)
+     * @method $this whereGt($column_name, $value=null)
+     * @method $this whereLt($column_name, $value=null)
+     * @method $this whereGte($column_name, $value=null)
+     * @method $this whereLte($column_name, $value=null)
+     * @method $this whereIn($column_name, $values)
+     * @method $this whereNotIn($column_name, $values)
+     * @method $this whereNull($column_name)
+     * @method $this whereNotNull($column_name)
+     * @method $this whereRaw($clause, $parameters=array())
+     * @method $this orderByDesc($column_name)
+     * @method $this orderByAsc($column_name)
+     * @method $this orderByExpr($clause)
+     * @method $this groupBy($column_name)
+     * @method $this groupByExpr($expr)
+     * @method $this havingEqual($column_name, $value=null)
+     * @method $this havingNotEqual($column_name, $value=null)
+     * @method $this havingIdIs($id)
+     * @method $this havingLike($column_name, $value=null)
+     * @method $this havingNotLike($column_name, $value=null)
+     * @method $this havingGt($column_name, $value=null)
+     * @method $this havingLt($column_name, $value=null)
+     * @method $this havingGte($column_name, $value=null)
+     * @method $this havingLte($column_name, $value=null)
+     * @method $this havingIn($column_name, $values=null)
+     * @method $this havingNotIn($column_name, $values=null)
+     * @method $this havingNull($column_name)
+     * @method $this havingNotNull($column_name)
+     * @method $this havingRaw($clause, $parameters=array())
+     * @method static this clearCache($table_name = null, $connection_name = self::DEFAULT_CONNECTION)
+     * @method array asArray()
+     * @method bool setExpr($key, $value = null)
+     * @method bool isDirty($key)
+     * @method bool isNew()
      */
 
     class ORM implements ArrayAccess {
@@ -194,7 +268,7 @@
                 }
             } else {
                 if (is_null($value)) {
-                    // Shortcut: If only one string argument is passed,
+                    // Shortcut: If only one string argument is passed, 
                     // assume it's a connection string
                     $value = $key;
                     $key = 'connection_string';
@@ -222,7 +296,7 @@
         public static function reset_config() {
             self::$_config = array();
         }
-
+        
         /**
          * Despite its slightly odd name, this is actually the factory
          * method used to acquire instances of the class. It is named
@@ -309,7 +383,7 @@
 
         /**
          * Detect and initialise the limit clause style ("SELECT TOP 5" /
-         * "... LIMIT 5"). If this has been specified manually using
+         * "... LIMIT 5"). If this has been specified manually using 
          * ORM::configure('limit_clause_style', 'top'), this will do nothing.
          * @param string $connection_name Which connection to use
          */
@@ -456,40 +530,44 @@
                 self::$_query_log[$connection_name] = array();
             }
 
-            // Strip out any non-integer indexes from the parameters
-            foreach($parameters as $key => $value) {
-	            if (!is_int($key)) unset($parameters[$key]);
-            }
-
-            if (count($parameters) > 0) {
+            if (empty($parameters)) {
+                $bound_query = $query;
+            } else {
                 // Escape the parameters
                 $parameters = array_map(array(self::get_db($connection_name), 'quote'), $parameters);
 
-                // Avoid %format collision for vsprintf
-                $query = str_replace("%", "%%", $query);
+                if (array_values($parameters) === $parameters) {
+                    // ? placeholders
+                    // Avoid %format collision for vsprintf
+                    $query = str_replace("%", "%%", $query);
 
-                // Replace placeholders in the query for vsprintf
-                if(false !== strpos($query, "'") || false !== strpos($query, '"')) {
-                    $query = IdiormString::str_replace_outside_quotes("?", "%s", $query);
+                    // Replace placeholders in the query for vsprintf
+                    if(false !== strpos($query, "'") || false !== strpos($query, '"')) {
+                        $query = IdiormString::str_replace_outside_quotes("?", "%s", $query);
+                    } else {
+                        $query = str_replace("?", "%s", $query);
+                    }
+
+                    // Replace the question marks in the query with the parameters
+                    $bound_query = vsprintf($query, $parameters);
                 } else {
-                    $query = str_replace("?", "%s", $query);
+                    // named placeholders
+                    foreach ($parameters as $key => $val) {
+                        $query = str_replace($key, $val, $query);
+                    }
+                    $bound_query = $query;
                 }
-
-                // Replace the question marks in the query with the parameters
-                $bound_query = vsprintf($query, $parameters);
-            } else {
-                $bound_query = $query;
             }
 
             self::$_last_query = $bound_query;
             self::$_query_log[$connection_name][] = $bound_query;
-
-
+            
+            
             if(is_callable(self::$_config[$connection_name]['logger'])){
                 $logger = self::$_config[$connection_name]['logger'];
                 $logger($bound_query, $query_time);
             }
-
+            
             return true;
         }
 
@@ -656,7 +734,7 @@
          * @return array
          */
         public function find_array() {
-            return $this->_run();
+            return $this->_run(); 
         }
 
         /**
@@ -828,14 +906,14 @@
          * Add columns to the list of columns returned by the SELECT
          * query. This defaults to '*'. Many columns can be supplied
          * as either an array or as a list of parameters to the method.
-         *
+         * 
          * Note that the alias must not be numeric - if you want a
          * numeric alias then prepend it with some alpha chars. eg. a1
-         *
+         * 
          * @example select_many(array('alias' => 'column', 'column2', 'alias2' => 'column3'), 'column4', 'column5');
          * @example select_many('column', 'column2', 'column3');
          * @example select_many(array('column', 'column2', 'column3'), 'column4', 'column5');
-         *
+         * 
          * @return \ORM
          */
         public function select_many() {
@@ -854,16 +932,16 @@
 
         /**
          * Add an unquoted expression to the list of columns returned
-         * by the SELECT query. Many columns can be supplied as either
+         * by the SELECT query. Many columns can be supplied as either 
          * an array or as a list of parameters to the method.
-         *
+         * 
          * Note that the alias must not be numeric - if you want a
          * numeric alias then prepend it with some alpha chars. eg. a1
-         *
+         * 
          * @example select_many_expr(array('alias' => 'column', 'column2', 'alias2' => 'column3'), 'column4', 'column5')
          * @example select_many_expr('column', 'column2', 'column3')
          * @example select_many_expr(array('column', 'column2', 'column3'), 'column4', 'column5')
-         *
+         * 
          * @return \ORM
          */
         public function select_many_expr() {
@@ -883,11 +961,11 @@
         /**
          * Take a column specification for the select many methods and convert it
          * into a normalised array of columns and aliases.
-         *
+         * 
          * It is designed to turn the following styles into a normalised array:
-         *
+         * 
          * array(array('alias' => 'column', 'column2', 'alias2' => 'column3'), 'column4', 'column5'))
-         *
+         * 
          * @param array $columns
          * @return array
          */
@@ -1049,7 +1127,7 @@
             foreach ($data as $key => $val) {
                 $column = $result->_quote_identifier($key);
                 $placeholders = $result->_create_placeholders($val);
-                $result = $result->_add_having("{$column} {$separator} ({$placeholders})", $val);
+                $result = $result->_add_having("{$column} {$separator} ({$placeholders})", $val);    
             }
             return $result;
         }
@@ -1094,7 +1172,7 @@
             foreach ($data as $key => $val) {
                 $column = $result->_quote_identifier($key);
                 $placeholders = $result->_create_placeholders($val);
-                $result = $result->_add_where("{$column} {$separator} ({$placeholders})", $val);
+                $result = $result->_add_where("{$column} {$separator} ({$placeholders})", $val);    
             }
             return $result;
         }
@@ -1153,7 +1231,7 @@
                 $result = $result->_add_condition($type, "{$key} {$separator} ?", $val);
             }
             return $result;
-        }
+        } 
 
         /**
          * Return a string containing the given number of question marks,
@@ -1173,7 +1251,7 @@
                 return implode(', ', $db_fields);
             }
         }
-
+        
         /**
          * Helper method that filters a column/value array returning only those
          * columns that belong to a compound primary key.
@@ -1250,19 +1328,19 @@
          * it can be overriden for any or every column using the second parameter.
          *
          * Each condition will be ORed together when added to the final query.
-         */
+         */        
         public function where_any_is($values, $operator='=') {
             $data = array();
             $query = array("((");
             $first = true;
-            foreach ($values as $item) {
+            foreach ($values as $value) {
                 if ($first) {
                     $first = false;
                 } else {
                     $query[] = ") OR (";
                 }
                 $firstsub = true;
-                foreach($item as $key => $item) {
+                foreach($value as $key => $item) {
                     $op = is_string($operator) ? $operator : (isset($operator[$key]) ? $operator[$key] : '=');
                     if ($firstsub) {
                         $firstsub = false;
@@ -1426,7 +1504,7 @@
         }
 
         /**
-         * Add an unquoted expression to the list of columns to GROUP BY
+         * Add an unquoted expression to the list of columns to GROUP BY 
          */
         public function group_by_expr($expr) {
             $this->_group_by[] = $expr;
@@ -1469,7 +1547,7 @@
          */
         public function having_id_is($id) {
             return (is_array($this->_get_id_column_name())) ?
-                $this->having($this->_get_compound_id_column_values($value)) :
+                $this->having($this->_get_compound_id_column_values($id), null) :
                 $this->having($this->_get_id_column_name(), $id);
         }
 
@@ -1929,7 +2007,7 @@
          * To set multiple properties at once, pass an associative array
          * as the first parameter and leave out the second parameter.
          * Flags the properties as 'dirty' so they will be saved to the
-         * database when save() is called.
+         * database when save() is called. 
          * @param string|array $key
          * @param string|null $value
          */
@@ -1964,7 +2042,7 @@
          * object was saved.
          */
         public function is_dirty($key) {
-            return isset($this->_dirty_fields[$key]);
+            return array_key_exists($key, $this->_dirty_fields);
         }
 
         /**
@@ -1973,32 +2051,6 @@
          */
         public function is_new() {
             return $this->_is_new;
-        }
-
-        /**
-         * Update any fields which have been modified
-         */
-        public function update()
-        {
-            $query = array();
-
-            // remove any expression fields as they are already baked into the query
-            $values = array_values(array_diff_key($this->_dirty_fields, $this->_expr_fields));
-
-            // If there are no dirty values, do nothing
-            if (empty($values) && empty($this->_expr_fields))
-                return true;
-
-            $query = $this->_build_update(true);
-
-            $success = self::_execute($query, array_merge($values, $this->_values), $this->_connection_name);
-            $caching_auto_clear_enabled = self::$_config[$this->_connection_name]['caching_auto_clear'];
-
-            if($caching_auto_clear_enabled)
-                self::clear_cache($this->_table_name, $this->_connection_name);
-
-            $this->_dirty_fields = $this->_expr_fields = array();
-            return $success;
         }
 
         /**
@@ -2049,7 +2101,7 @@
                         // if the primary key is compound, assign the last inserted id
                         // to the first column
                         if (is_array($column)) {
-                            $column = array_slice($column, 0, 1);
+                            $column = reset($column);
                         }
                         $this->_data[$column] = $db->lastInsertId();
                     }
@@ -2082,7 +2134,7 @@
         /**
          * Build an UPDATE query
          */
-        protected function _build_update($with_where = false) {
+        protected function _build_update() {
             $query = array();
             $query[] = "UPDATE {$this->_quote_identifier($this->_table_name)} SET";
 
@@ -2094,13 +2146,7 @@
                 $field_list[] = "{$this->_quote_identifier($key)} = $value";
             }
             $query[] = join(", ", $field_list);
-
-            // use defined where instead of primary index
-            if ($with_where)
-                $query[] = $this->_build_where();
-            else
-                $this->_add_id_column_conditions($query);
-
+            $this->_add_id_column_conditions($query);
             return join(" ", $query);
         }
 
@@ -2197,12 +2243,12 @@
 
         /**
          * Magic method to capture calls to undefined class methods.
-         * In this case we are attempting to convert camel case formatted
+         * In this case we are attempting to convert camel case formatted 
          * methods into underscore formatted methods.
          *
-         * This allows us to call ORM methods using camel case and remain
+         * This allows us to call ORM methods using camel case and remain 
          * backwards compatible.
-         *
+         * 
          * @param  string   $name
          * @param  array    $arguments
          * @return ORM
@@ -2219,13 +2265,13 @@
         }
 
         /**
-         * Magic method to capture calls to undefined static class methods.
-         * In this case we are attempting to convert camel case formatted
+         * Magic method to capture calls to undefined static class methods. 
+         * In this case we are attempting to convert camel case formatted 
          * methods into underscore formatted methods.
          *
-         * This allows us to call ORM methods using camel case and remain
+         * This allows us to call ORM methods using camel case and remain 
          * backwards compatible.
-         *
+         * 
          * @param  string   $name
          * @param  array    $arguments
          * @return ORM
@@ -2345,6 +2391,8 @@
     /**
      * A result set class for working with collections of model instances
      * @author Simon Holywell <treffynnon@php.net>
+     * @method null setResults(array $results)
+     * @method array getResults()
      */
     class IdiormResultSet implements Countable, IteratorAggregate, ArrayAccess, Serializable {
         /**
@@ -2384,7 +2432,7 @@
         public function as_array() {
             return $this->get_results();
         }
-
+        
         /**
          * Get the number of records in the result set
          * @return int
@@ -2419,7 +2467,7 @@
         public function offsetGet($offset) {
             return $this->_results[$offset];
         }
-
+        
         /**
          * ArrayAccess
          * @param int|string $offset
