@@ -5,8 +5,8 @@
     "keywords": ["idiorm", "orm", "query builder"],
     "homepage": "http://j4mie.github.com/idiormandparis",
     "support": {
-        "issues": "https://github.com/martin/idiorm/issues",
-        "source": "https://github.com/martin/idiorm"
+        "issues": "https://github.com/sudolio/idiorm/issues",
+        "source": "https://github.com/sudolio/idiorm"
     },
     "authors": [
         {
