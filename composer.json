@@ -1,5 +1,5 @@
 {
-    "name": "ef/idiorm",
+    "name": "sudolio/idiorm",
     "type": "library",
     "description": "A lightweight nearly-zero-configuration object-relational mapper and fluent query builder for PHP5",
     "keywords": ["idiorm", "orm", "query builder"],
