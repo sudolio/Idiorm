@@ -14,7 +14,7 @@ Idiorm is now considered to be feature complete as of version 1.5.0. Whilst it w
 
 ---
 
-A lightweight nearly-zero-configuration object-relational mapper and fluent query builder for PHP5.
+A lightweight nearly-zero-configuration object-relational mapper and fluent query builder for PHP5 and above.
 
 Tested on PHP 5.2.0+ - may work on earlier versions with PDO and the correct database drivers.
 
@@ -73,8 +73,37 @@ foreach ($tweets as $tweet) {
 }
 ```
 
+Tests
+-----
+
+Tests are written with PHPUnit and be run through composer
+
+    composer test
+
+To make testing on PHP 5.2 (Idiorm maintains support back to this version of PHP) there
+is a Docker setup in `./test/docker_for_php52` - check the readme in there for more.
+
 Changelog
 ---------
+#### 1.5.6 - released 2018-05-31
+
+* Assign `null` to `self::$_db` on `reset_db()` to ensure PDO closes the connections [[bleakgadfly](https://github.com/bleakgadfly)] - [issue #338](https://github.com/j4mie/idiorm/issues/338)
+
+#### 1.5.5 - released 2018-01-05
+
+* Add a docker setup for testing with PHP 5.2 (uses PHPUnit 3.6.12, which is the last version released compatible with PHP 5.2) [[Treffynnon](https://github.com/treffynnon)]
+
+#### 1.5.4 - released 2018-01-04
+
+* Reset Idiorm state when a cached result is returned [[fayland](https://github.com/fayland) (and [Treffynnon](https://github.com/treffynnon))] - [issue #319](https://github.com/j4mie/idiorm/issues/319)
+* Fix travis builds for PHP 5.2+ (adding 7.0 and 7.1) and document support for newer PHP versions [[Treffynnon](https://github.com/treffynnon)]
+* Correct PHPDoc comments for `selectMany()` [[kawausokun](https://github.com/kawausokun)] - [issue #325](github.com/j4mie/idiorm/issues/325)
+* Add pdo_sqlite to the composer require-dev dependencies [[qyanu](https://github.com/qyanu)] - [issue #328](github.com/j4mie/idiorm/issues/328)
+
+#### 1.5.3 - released 2017-03-21
+
+* Document the `raw_execute()` method and add a note for `get_db()` in the querying documentation - [[Treffynnon](https://github.com/treffynnon)]
+
 #### 1.5.2 - released 2016-12-14
 
 * Fix autoincremented compound keys inserts [[lrlopez](https://github.com/lrlopez)] - [issue #233](https://github.com/j4mie/idiorm/issues/233) and [pull #235](https://github.com/j4mie/idiorm/pull/235)
