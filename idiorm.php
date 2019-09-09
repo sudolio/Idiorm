@@ -240,6 +240,15 @@
         // this instance only. Overrides the config settings.
         protected $_instance_id_column = null;
 
+        // cache current query with timeout in seconds
+        protected $_cache_query = false;
+
+        // custom cache key
+        protected $_cache_key = false;
+
+        // cache group
+        protected $_cache_group = false;
+
         // ---------------------- //
         // --- STATIC METHODS --- //
         // ---------------------- //
@@ -1879,13 +1888,43 @@
         /**
          * Add the given value to the query cache.
          */
-        protected static function _cache_query_result($cache_key, $value, $table_name = null, $connection_name = self::DEFAULT_CONNECTION) {
+        protected static function _cache_query_result($cache_key, $value, $table_name = null, $connection_name = self::DEFAULT_CONNECTION, $timeout, $group) {
             if(isset(self::$_config[$connection_name]['cache_query_result']) and is_callable(self::$_config[$connection_name]['cache_query_result'])){
-                return call_user_func_array(self::$_config[$connection_name]['cache_query_result'], array($cache_key, $value, $table_name, $connection_name));
+                return call_user_func_array(self::$_config[$connection_name]['cache_query_result'], array($cache_key, $value, $table_name, $connection_name, $timeout, $group));
             } elseif (!isset(self::$_query_cache[$connection_name])) {
                 self::$_query_cache[$connection_name] = array();
             }
             self::$_query_cache[$connection_name][$cache_key] = $value;
+        }
+
+        /**
+         * Enable/Disable caching for the current request.
+         *
+         * $timeout - time in seconds
+         * @return this
+         */
+        public function cache($timeout = false)
+        {
+            $this->_cache_query = $timeout;
+            return $this;
+        }
+
+        /**
+         * Set custom cache key for the current request.
+         */
+        public function cacheKey($key = false)
+        {
+            $this->_cache_key = $key;
+            return $this;
+        }
+
+        /**
+         * Set own cache group for the current request.
+         */
+        public function cacheGroup($group = false)
+        {
+            $this->_cache_group = $group;
+            return $this;
         }
 
         /**
@@ -1894,10 +1933,19 @@
          */
         protected function _run() {
             $query = $this->_build_select();
-            $caching_enabled = self::$_config[$this->_connection_name]['caching'];
+            $caching_enabled = self::$_config[$this->_connection_name]['caching'] || $this->_cache_query !== false;
 
-            if ($caching_enabled) {
-                $cache_key = self::_create_cache_key($query, $this->_values, $this->_table_name, $this->_connection_name);
+            if ($caching_enabled)
+            {
+                if ($this->_cache_key)
+                {
+                    $cache_key = $this->_cache_key;
+                }
+                else
+                {
+                    $cache_key = self::_create_cache_key($query, $this->_values, $this->_table_name, $this->_connection_name);
+                }
+
                 $cached_result = self::_check_query_cache($cache_key, $this->_table_name, $this->_connection_name);
 
                 if ($cached_result !== false) {
@@ -1914,8 +1962,9 @@
                 $rows[] = $row;
             }
 
-            if ($caching_enabled) {
-                self::_cache_query_result($cache_key, $rows, $this->_table_name, $this->_connection_name);
+            if ($caching_enabled)
+            {
+                self::_cache_query_result($cache_key, $rows, $this->_table_name, $this->_connection_name, $this->_cache_query, $this->_cache_group);
             }
 
             $this->_reset_idiorm_state();
