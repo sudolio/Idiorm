@@ -2221,7 +2221,7 @@
         /**
          * Build an UPDATE query
          */
-        protected function _build_update() {
+        protected function _build_update($with_where = false) {
             $query = array();
             $query[] = "UPDATE {$this->_quote_identifier($this->_table_name)} SET";
 
@@ -2233,7 +2233,16 @@
                 $field_list[] = "{$this->_quote_identifier($key)} = $value";
             }
             $query[] = join(", ", $field_list);
+
+            if ($with_where)
+            {
+                $query[] = $this->_build_where();
+            }
+            else
+            {
                 $this->_add_id_column_conditions($query);
+            }
+
             return join(" ", $query);
         }
 
